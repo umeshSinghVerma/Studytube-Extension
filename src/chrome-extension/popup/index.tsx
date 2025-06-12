@@ -15,6 +15,8 @@ import { VideoNotesView } from "./components/video-notes-view"
 import { LoadingSpinner } from "./components/loading-skeleton"
 import { useVideos, useAllNotes } from "./hooks/use-api"
 import { getCurrentVideoId, isYoutube } from "./lib/utils"
+// import { useUser } from "@civic/auth-web3/react"
+import { signInWithCivic, logoutCivic, getCivicUserInfo } from "./lib/auth";
 
 function StudyTubeExtension() {
   const [isOnYouTube, setIsOnYouTube] = useState(false)
@@ -23,6 +25,7 @@ function StudyTubeExtension() {
   const [currentFilter, setCurrentFilter] = useState<FilterType>("all")
   const [selectedVideoId, setSelectedVideoId] = useState<string | undefined>()
   const [searchLoading, setSearchLoading] = useState(false)
+  // const { signIn } = useUser();
 
   // API hooks for global data
   const { videos } = useVideos()
@@ -64,6 +67,23 @@ function StudyTubeExtension() {
   const handleSearch = (query: string) => {
     setSearchQuery(query)
   }
+
+
+  const handleLogin = async () => {
+    try {
+      await signInWithCivic();
+      const user = await getCivicUserInfo();
+      console.log("User Info:", user);
+    } catch (err) {
+      console.error("Login failed:", err);
+    }
+  };
+
+  const handleLogout = async () => {
+    await logoutCivic();
+    console.log("Logged out.");
+  };
+
 
   if (!isOnYouTube) {
     return (
@@ -295,7 +315,13 @@ function StudyTubeExtension() {
                     <CardContent className="p-4">
                       <div className="text-center">
                         <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <User className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                          {/* <User className="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> */}
+                          <button onClick={handleLogin} className="sign-in">
+                            Sign in
+                          </button>
+                          <button onClick={handleLogout} className="sign-in">
+                            Sign out
+                          </button>
                         </div>
                         <p className="text-sm font-medium text-foreground">Study User</p>
                         <p className="text-xs text-muted-foreground">student@example.com</p>

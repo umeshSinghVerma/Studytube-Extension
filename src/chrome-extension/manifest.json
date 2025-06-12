@@ -5,7 +5,8 @@
   "permissions": [
     "activeTab",
     "storage",
-    "unlimitedStorage"
+    "unlimitedStorage",
+    "identity"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
@@ -18,6 +19,14 @@
   "action": {
     "default_title": "Youtube Study Kit",
     "default_popup": "popup.html"
+  },
+  "oauth2": {
+    "client_id": "8d2ee20a-b1f7-4bc2-89a9-2648289e05bb",
+    "scopes": [
+      "openid",
+      "profile",
+      "email"
+    ]
   },
   "background": {
     "service_worker": "background.js"
