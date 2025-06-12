@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import { api } from "../lib/api"
 import type { Note, Video } from "../lib/mock-data"
@@ -91,29 +90,32 @@ export function useVideoNotes(videoId: string) {
 }
 
 export function useCurrentVideo() {
-  const [video, setVideo] = useState<Video | null>(null)
+  const [video, setVideo] = useState<Video | undefined>(undefined)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const fetchCurrentVideo = async () => {
-      try {
-        setLoading(true)
-        const response = await api.getCurrentVideo()
-        if (response.success) {
-          setVideo(response.data)
-        } else {
-          setError(response.message || "Failed to fetch current video")
-        }
-      } catch (err) {
-        setError("Network error occurred")
-      } finally {
-        setLoading(false)
-      }
-    }
+useEffect(() => {
+  if (video !== undefined ) return;
 
-    fetchCurrentVideo()
-  }, [])
+  const fetchCurrentVideo = async () => {
+    try {
+      setLoading(true);
+      const response = await api.getCurrentVideo();
+      console.log("response",response);
+      if (response.success) {
+        setVideo(response.data);
+      } else {
+        setError(response.message || "Failed to fetch current video");
+      }
+    } catch (err) {
+      setError("Network error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchCurrentVideo();
+}, [video]);
 
   return { video, loading, error }
 }

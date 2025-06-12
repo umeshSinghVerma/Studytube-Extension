@@ -20,7 +20,9 @@ interface VideoNotesViewProps {
 
 export function VideoNotesView({ searchQuery, currentFilter, selectedVideoId, onFilterChange }: VideoNotesViewProps) {
   const { video: currentVideo, loading: videoLoading } = useCurrentVideo()
+  console.log("currentVideo",currentVideo);
   const { notes, loading: notesLoading } = useVideoNotes(currentVideo?.id || "")
+  console.log("notes ",notes);
 
   const loading = videoLoading || notesLoading
 

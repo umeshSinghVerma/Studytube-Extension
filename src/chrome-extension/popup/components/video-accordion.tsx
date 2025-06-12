@@ -58,8 +58,10 @@ export function VideoAccordion({ video, notes }: VideoAccordionProps) {
                   className="text-xs h-6 px-2 border border-border hover:bg-muted rounded text-foreground"
                   onClick={handlePDFClick}
                 >
-                  <Download className="w-3 h-3 mr-1" />
-                  PDF
+                  <div className="flex gap-1">
+                    <Download className="w-3 h-3 mr-1" />
+                    <span>PDF</span>
+                  </div>
                 </PDFDownloadButton>
               </div>
             </div>

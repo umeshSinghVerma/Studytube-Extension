@@ -8,6 +8,21 @@ export interface Note {
   createdAt: string
 }
 
+export interface BackendResponse {
+  [videoId: string]: {
+    data: {
+      imgText: string
+      imgUrl: string
+      timestamp: number
+      ytLink: string
+    }[]
+    heading: string
+    updatedAt: string
+    channelName:string,
+    videoDuration:string,
+  }
+}
+
 export interface Video {
   id: string
   title: string

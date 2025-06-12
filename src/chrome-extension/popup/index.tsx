@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, Expand, Play, FolderOpen, Settings, User, FileText, BookOpen, Youtube, Sparkles } from "lucide-react"
+import { Search, Expand, Play, Settings, User, FileText, BookOpen, Youtube, Sparkles } from "lucide-react"
 import { Button } from "./components/ui/button"
 import { Input } from "./components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs"
@@ -11,17 +11,17 @@ import { ThemeToggle } from "./components/theme-toggle"
 import type { FilterType } from "./components/filter-dropdown"
 import { AllNotesView } from "./components/all-notes-view"
 import { VideoNotesView } from "./components/video-notes-view"
-import { PlaylistView } from "./components/playlist-view"
+// import { PlaylistView } from "./components/playlist-view"
 import { LoadingSpinner } from "./components/loading-skeleton"
 import { useVideos, useAllNotes } from "./hooks/use-api"
-import { isYoutube } from "./lib/utils"
+import { getCurrentVideoId, isYoutube } from "./lib/utils"
 
 function StudyTubeExtension() {
   const [isOnYouTube, setIsOnYouTube] = useState(false)
   const [activeTab, setActiveTab] = useState("single")
   const [searchQuery, setSearchQuery] = useState("")
   const [currentFilter, setCurrentFilter] = useState<FilterType>("all")
-  const [selectedVideoId, setSelectedVideoId] = useState<string>()
+  const [selectedVideoId, setSelectedVideoId] = useState<string | undefined>()
   const [searchLoading, setSearchLoading] = useState(false)
 
   // API hooks for global data
@@ -41,16 +41,20 @@ function StudyTubeExtension() {
     }
   }, [searchQuery])
 
-  // const toggleYouTubeState = () => {
-  //   setIsOnYouTube(!isOnYouTube)
-  // }
-  useEffect(()=>{
-    async function isYoutubeOpen(){
+  useEffect(() => {
+    async function isYoutubeOpen() {
       const isOnYouTubeVideo = await isYoutube();
       setIsOnYouTube(!!isOnYouTubeVideo);
     }
+    async function setCurrentVideo() {
+      const currentVideoId = await getCurrentVideoId();
+      console.log("currentVideo", currentVideoId);
+      setSelectedVideoId(currentVideoId ?? undefined);
+    }
     isYoutubeOpen();
-  },[])
+    setCurrentVideo();
+
+  }, [])
 
   const handleFilterChange = (filter: FilterType, videoId?: string) => {
     setCurrentFilter(filter)
@@ -163,7 +167,11 @@ function StudyTubeExtension() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-1 flex-shrink-0">
-          <Button size="sm" variant="outline" className="h-7 px-2 text-xs">
+          <Button size="sm" variant="outline" className="h-7 px-2 text-xs"
+            onClick={() => {
+              window.open("https://frametagger.com/learn?v=390423", "_blank");
+            }}
+          >
             <Expand className="w-3 h-3" />
           </Button>
           <ThemeToggle />
@@ -189,13 +197,13 @@ function StudyTubeExtension() {
                 <BookOpen className="w-4 h-4 mb-1" />
                 <span className="text-[10px]">All</span>
               </TabsTrigger>
-              <TabsTrigger
+              {/* <TabsTrigger
                 value="playlist"
                 className="w-full h-12 flex flex-col items-center justify-center text-xs data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-900/30 dark:data-[state=active]:text-emerald-400 hover:bg-muted"
               >
                 <FolderOpen className="w-4 h-4 mb-1" />
                 <span className="text-[10px]">Playlist</span>
-              </TabsTrigger>
+              </TabsTrigger> */}
               <TabsTrigger
                 value="settings"
                 className="w-full h-12 flex flex-col items-center justify-center text-xs data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-900/30 dark:data-[state=active]:text-emerald-400 hover:bg-muted"
@@ -230,9 +238,9 @@ function StudyTubeExtension() {
               <AllNotesView searchQuery={searchQuery} />
             </TabsContent>
 
-            <TabsContent value="playlist" className="flex-1 p-4 m-0 overflow-hidden">
+            {/* <TabsContent value="playlist" className="flex-1 p-4 m-0 overflow-hidden">
               <PlaylistView />
-            </TabsContent>
+            </TabsContent> */}
 
             <TabsContent value="settings" className="flex-1 p-4 m-0 overflow-hidden">
               <div className="h-full flex flex-col overflow-hidden">

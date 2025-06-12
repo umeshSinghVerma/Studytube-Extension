@@ -1,4 +1,4 @@
-async function saveImage(videoId, imgUrl, imgText, ytLink, timestamp, videoHeading) {
+async function saveImage(videoId, imgUrl, imgText, ytLink, timestamp, videoHeading,channelName,videoDuration) {
     const data = await chrome.storage.local.get(["userData"]);
     const previousData = data.userData;
     const updatedAt = JSON.stringify(new Date());
@@ -10,6 +10,8 @@ async function saveImage(videoId, imgUrl, imgText, ytLink, timestamp, videoHeadi
             updatedData = {
                 ...previousData,
                 [videoId]: {
+                    channelName:channelName,
+                    videoDuration:videoDuration,
                     heading: videoHeading,
                     data: sortedData,
                     updatedAt
@@ -20,6 +22,8 @@ async function saveImage(videoId, imgUrl, imgText, ytLink, timestamp, videoHeadi
                 ...previousData,
                 [videoId]: {
                     heading: videoHeading,
+                    channelName:channelName,
+                    videoDuration:videoDuration,
                     data: [{ imgUrl, imgText, ytLink, timestamp }],
                     updatedAt
                 }
@@ -37,6 +41,8 @@ async function saveImage(videoId, imgUrl, imgText, ytLink, timestamp, videoHeadi
         chrome.storage.local.set({
             userData: {
                 [videoId]: {
+                    channelName:channelName,
+                    videoDuration:videoDuration,
                     heading: videoHeading,
                     data: [{ imgUrl, imgText, ytLink, timestamp }],
                     updatedAt
@@ -54,6 +60,9 @@ async function saveImage(videoId, imgUrl, imgText, ytLink, timestamp, videoHeadi
 }
 let getPlayingScreenshot = () => {
     let video = document.getElementsByTagName('video')[0];
+    let channelName = document.querySelector("ytd-channel-name yt-formatted-string")?.getAttribute("title");
+    let videoDuration = document.querySelector(".ytp-time-duration")?.textContent.trim()
+
     if (video) {
         const REDUCE_RATIO = 1;
         const canvas = document.createElement('canvas');
@@ -91,7 +100,7 @@ let getPlayingScreenshot = () => {
                     } else {
                         VideoLink = 'https://www.youtube.com/watch?v=' + currentVideo + "&t=" + timestamp + "s"
                     }
-                    await saveImage(currentVideo, newFileSrc, Note, VideoLink, timestamp, videoTitle);
+                    await saveImage(currentVideo, newFileSrc, Note, VideoLink, timestamp, videoTitle, channelName, videoDuration);
                 }
             });
             reader2.readAsDataURL(newFile);
@@ -345,6 +354,8 @@ async function keyBindings(e, currentVideo) {
         // let lineWidth = 2;
         let startX;
         let startY;
+        let channelName = document.querySelector("ytd-channel-name yt-formatted-string")?.getAttribute("title");
+        let videoDuration = document.querySelector(".ytp-time-duration")?.textContent.trim()
 
         GetButton.addEventListener('click', e => {
             const REDUCE_RATIO = 1;
@@ -377,7 +388,7 @@ async function keyBindings(e, currentVideo) {
                         } else {
                             VideoLink = 'https://www.youtube.com/watch?v=' + currentVideo + "&t=" + timestamp + "s"
                         }
-                        await saveImage(currentVideo, newFileSrc, "", VideoLink, timestamp, videoTitle);
+                        await saveImage(currentVideo, newFileSrc, "", VideoLink, timestamp, videoTitle,channelName,videoDuration);
                     }
                     GetButton.innerHTML = `<svg height="40px" viewBox="0 0 1024 1024" class="icon"  version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M853.333333 874.666667H170.666667c-46.933333 0-85.333333-38.4-85.333334-85.333334V234.666667c0-46.933333 38.4-85.333333 85.333334-85.333334h682.666666c-46.933333 0-85.333333 38.4-85.333334 85.333334v554.666666c0 46.933333 38.4 85.333333 85.333334 85.333334z" fill="#8CBCD6" /><path d="M746.666667 341.333333m-64 0a64 64 0 1 0 128 0 64 64 0 1 0-128 0Z" fill="#B3DDF5" /><path d="M426.666667 341.333333L192 682.666667h469.333333z" fill="#9AC9E3" /><path d="M661.333333 469.333333l-170.666666 213.333334h341.333333z" fill="#B3DDF5" /><path d="M810.666667 810.666667m-213.333334 0a213.333333 213.333333 0 1 0 426.666667 0 213.333333 213.333333 0 1 0-426.666667 0Z" fill="#43A047" /><path d="M768 682.666667h85.333333v256h-85.333333z" fill="#FFFFFF" /><path d="M682.666667 768h256v85.333333H682.666667z" fill="#FFFFFF" /></svg>`;
                     document.getElementsByTagName('video')[0].play();

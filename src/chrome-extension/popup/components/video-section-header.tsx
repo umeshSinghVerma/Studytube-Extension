@@ -30,10 +30,12 @@ export function VideoSectionHeader({ video, notes, title }: VideoSectionHeaderPr
             notes={notes}
             title={title}
             isAllNotes={false}
-            className="text-xs h-6 px-2 border border-border hover:bg-muted rounded text-foreground ml-2 flex-shrink-0"
+            className="text-xs h-6 px-2 border border-border hover:bg-muted rounded text-foreground ml-2 flex-shrink-0 flex gap-1"
           >
-            <Download className="w-3 h-3 mr-1" />
-            PDF
+            <div className="flex gap-1">
+              <Download className="w-3 h-3 mr-1" />
+              <span>PDF</span>
+            </div>
           </PDFDownloadButton>
         </CardTitle>
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
