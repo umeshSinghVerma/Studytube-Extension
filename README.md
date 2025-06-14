@@ -1,94 +1,175 @@
-# Chrome Extension Starter with Vite, React, TypeScript, and Tailwind CSS
-This project is a starter template for building modern Chrome extensions using Vite, React, TypeScript, and Tailwind CSS. It simplifies the setup so you can focus on building your extension's features.
+## 🔐 Civic Auth in Chrome Extensions (Unofficial Integration)
 
-<div style="display: flex; justify-content: space-around">
-  <img src="https://github.com/user-attachments/assets/b2267b19-1618-4797-8e0e-a241697b92cf" alt="image 1" width="200"/>
-  <img src="https://github.com/user-attachments/assets/eb6304c9-afd7-4bfc-b9ce-8099531a66d9" alt="image 2" width="200"/>
-  <img src="https://github.com/user-attachments/assets/7808d29d-d1ca-4287-b82b-183ad7b6510a" alt="image 3" width="200"/>
-  <img src="https://github.com/user-attachments/assets/c2f328e2-f7d6-4e6d-a3ec-8e750625e0f8" alt="image 4" width="200"/>
-</div>
+> ⚠️ **Note**: [Civic](https://www.civic.com/) does **not officially support** authentication inside Chrome Extensions.
+> ✅ I have built a full PKCE-based workaround using `chrome.identity` that **enables Civic login in Chrome Extensions**.
 
-## View tutorial on YouTube
- <a href="https://www.youtube.com/watch?v=jwDErziR1nE">
-    <img src="http://i.ytimg.com/vi/jwDErziR1nE/hqdefault.jpg" alt="YouTube video" width="200"/>
-  </a>
+This solution is battle-tested for Civic OAuth2 and can be used by **other devs** building Chrome Extensions for Web3 apps.
 
-## Features
-- **Fast reloading** develop UI faster, view the popup and options page
-- **Vite** for fast bundling and development
-- **React** for building interactive UI components
-- **TypeScript** for type-safe JavaScript development
-- **Tailwind CSS** for easy and responsive styling
-- **chrome-types** Chrome's API TS files for auto-completion 
+---
 
-## Installation
+### ✨ Features
 
-### Clone this repository:
-```
-git clone https://github.com/omribarmats/chrome-extension-starter.git new-project
-```
-* Replace `new-project` with your project name
+* Uses [PKCE](https://oauth.net/2/pkce/) flow for secure OAuth
+* Civic login using `chrome.identity.launchWebAuthFlow`
+* Fetches Civic user profile and stores token securely
+* Logout with token + session cleanup
+* Built-in `isSignedIn` and `getAccessToken` helpers
 
-### Open the new directory:
-```
-cd new-project
-```
-### Install dependencies:
-```
-npm install
-```
-### Start the development server:
-```
-npm run dev
-```
-## Load the Extension
+---
 
-1. Run the build command: `npm run build.`
-2. Go to `chrome://extensions/` in your Chrome browser.
-3. Enable `Developer mode`.
-4. Click `Load unpacked` and select the `dist` folder from the project.
+### 🚀 Usage (API)
 
-## Development
-- Hot-reload enabled for easier development.
-- Modify your code in the src folder.
-- Tailwind CSS is already configured and ready to use.
-- Run `nmp run build` to implement changes to `dist` folder
-- Go on `chrome://extensions/` and click refresh `⟳`
-
-### How to change the popup? 
-- Go on `src/chrome-extension/popup/index.tsx`
-- Once changes are made open the terminal and run `nmp run build` then visit `chrome://extensions/` and click the refresh `⟳` button on your extension
-
-### How to change the options page? 
-- Go on `src/chrome-extension/options/index.tsx`
-- Once changes are made open the terminal and run `nmp run build` then visit `chrome://extensions/` and click the refresh `⟳` button on your extension
-
-- ### How to add a background script? 
-- Create a `background.ts` file inside the `src` folder
-- Go on `vite.config.ts` and add this line `background: resolve(__dirname, "src/background.ts"),` under `build.rollupOptions.input`
-- For example 
+```ts
+await signInWithCivic();              // Launch Civic sign-in popup
+const user = await getCivicUserInfo(); // Get Civic user details
+const isSignedIn = await isUserSignedIn(); // Check login status
+const token = await getAccessToken(); // Get Civic access token
+await logoutCivic();                 // Log out and clean session
 ```
- build: {
-    rollupOptions: {
-      input: {
-        popup: resolve(__dirname, "popup.html"),
-        options: resolve(__dirname, "options.html"),
-        background: resolve(__dirname, "src/background.ts"),
-      },
-      output: {
-        entryFileNames: "[name].js",
-      },
-    },
-  },
-```
-- Go on `manifest.json` and add this code:
-```
-  "background": {
-    "service_worker": "background.js",
-    "type": "module"
+
+---
+
+### 🧩 Civic Auth Chrome Extension Implementation
+
+```ts
+const CIVIC_CLIENT_ID = "YOUR_CLIENT_ID";
+const REDIRECT_URI = `https://${chrome.runtime.id}.chromiumapp.org/`;
+const CIVIC_TOKEN_URL = "https://auth.civic.com/oauth/token";
+const CIVIC_USERINFO_URL = "https://auth.civic.com/oauth/userinfo";
+
+function generateCodeVerifier(length = 128) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  return Array.from(crypto.getRandomValues(new Uint8Array(length)))
+    .map(x => chars[x % chars.length])
+    .join('');
+}
+
+async function generateCodeChallenge(verifier) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+export async function signInWithCivic() {
+  const codeVerifier = generateCodeVerifier();
+  const codeChallenge = await generateCodeChallenge(codeVerifier);
+  const state = crypto.randomUUID();
+
+  await chrome.storage.local.set({ civicCodeVerifier: codeVerifier, civicState: state });
+
+  const authUrl = `https://auth.civic.com/oauth/auth?` + new URLSearchParams({
+    response_type: "code",
+    client_id: CIVIC_CLIENT_ID,
+    redirect_uri: REDIRECT_URI,
+    scope: "openid profile email",
+    code_challenge_method: "S256",
+    code_challenge: codeChallenge,
+    state,
+    prompt: "login",
+  });
+
+  return new Promise((resolve, reject) => {
+    chrome.identity.launchWebAuthFlow(
+      { url: authUrl, interactive: true },
+      async (redirectUrl) => {
+        if (chrome.runtime.lastError) return reject(chrome.runtime.lastError.message);
+
+        if (redirectUrl) {
+          const url = new URL(redirectUrl);
+          const code = url.searchParams.get("code");
+          const returnedState = url.searchParams.get("state");
+
+          const { civicCodeVerifier, civicState } = await chrome.storage.local.get(["civicCodeVerifier", "civicState"]);
+          if (returnedState !== civicState) return reject("State mismatch. Possible CSRF attack.");
+
+          try {
+            const tokenRes = await fetch(CIVIC_TOKEN_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({
+                grant_type: "authorization_code",
+                client_id: CIVIC_CLIENT_ID,
+                code: code || "",
+                redirect_uri: REDIRECT_URI,
+                code_verifier: civicCodeVerifier,
+              }),
+            });
+
+            const tokenData = await tokenRes.json();
+            if (tokenData.access_token) {
+              await chrome.storage.local.set({ civicToken: tokenData });
+              resolve();
+            } else {
+              reject("Failed to retrieve access token");
+            }
+          } catch (err) {
+            reject("Token exchange failed: " + err);
+          }
+        } else {
+          reject("Authorization failed.");
+        }
+      }
+    );
+  });
+}
+
+export async function getCivicUserInfo() {
+  const { civicToken } = await chrome.storage.local.get("civicToken");
+  if (!civicToken || !civicToken.access_token) return null;
+
+  try {
+    const res = await fetch(CIVIC_USERINFO_URL, {
+      headers: { Authorization: `Bearer ${civicToken.access_token}` },
+    });
+    if (!res.ok) throw new Error("Failed to fetch user info");
+    return await res.json();
+  } catch (error) {
+    console.error("User info error:", error);
+    return null;
   }
-``` 
-- Open the terminal and run `nmp run build` then visit `chrome://extensions/` and click the refresh `⟳` button on your extension
+}
 
-## Contributing
-Feel free to fork the project and make improvements or submit bug reports or issues.
+export async function logoutCivic() {
+  await chrome.storage.local.remove(["civicToken", "civicCodeVerifier", "civicState"]);
+  const logoutUrl = "https://auth.civic.com/logout";
+  chrome.identity.launchWebAuthFlow({ url: logoutUrl, interactive: true }, (url) => {
+    console.log("Logged out from Civic.");
+  });
+}
+
+export async function isUserSignedIn() {
+  const { civicToken } = await chrome.storage.local.get("civicToken");
+  return !!(civicToken && civicToken.access_token);
+}
+
+export async function getAccessToken() {
+  const { civicToken } = await chrome.storage.local.get("civicToken");
+  return civicToken?.access_token ?? null;
+}
+```
+
+---
+
+### 📎 Notes
+
+* This was tested using Manifest V3.
+* Be sure to add the following permissions in your `manifest.json`:
+
+```json
+"permissions": ["identity", "storage"],
+"oauth2": {
+  "client_id": "YOUR_CLIENT_ID",
+  "scopes": ["openid", "profile", "email"]
+},
+"externally_connectable": {
+  "matches": ["https://*.chromiumapp.org/"]
+}
+```
+
+* Register your `https://<EXTENSION_ID>.chromiumapp.org/` URL in the [Civic Developer Console](https://www.civic.com/).
+
+---
