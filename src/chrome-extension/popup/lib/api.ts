@@ -36,9 +36,7 @@ export async function getPlaylistVideoList(playListId: string) {
   }
 }
 
-// Fake API functions
 export const api = {
-  // Fetch all videos
   async getVideos(): Promise<ApiResponse<Video[]>> {
     const allData = await getAllData();
     const videos = allData?.videos ?? [];

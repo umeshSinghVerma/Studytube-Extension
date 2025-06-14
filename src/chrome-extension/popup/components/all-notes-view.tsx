@@ -43,11 +43,13 @@ export function AllNotesView({ searchQuery }: AllNotesViewProps) {
   )
 
   // Sort by most recent video activity
-  const sortedGroups = Object.values(groupedNotes).sort((a: any, b: any) => {
-    const aLatest = Math.max(...a.notes.map((n: Note) => new Date(n.createdAt).getTime()))
-    const bLatest = Math.max(...b.notes.map((n: Note) => new Date(n.createdAt).getTime()))
-    return bLatest - aLatest
-  })
+  const sortedGroups = Object.values(groupedNotes).sort(
+    (a: { video: Video; notes: Note[] }, b: { video: Video; notes: Note[] }) => {
+      const aLatest = Math.max(...a.notes.map((n: Note) => new Date(n.createdAt).getTime()))
+      const bLatest = Math.max(...b.notes.map((n: Note) => new Date(n.createdAt).getTime()))
+      return bLatest - aLatest
+    }
+  )
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -83,7 +85,7 @@ export function AllNotesView({ searchQuery }: AllNotesViewProps) {
         ) : (
           <div className="min-w-0">
             <div className="min-w-0">
-              {(sortedGroups as { video: any; notes: any }[]).map(({ video, notes: videoNotes }) => (
+              {(sortedGroups as { video: Video; notes: Note[] }[]).map(({ video, notes: videoNotes }) => (
                 <VideoAccordion key={video.id} video={video} notes={videoNotes} />
               ))}
             </div>

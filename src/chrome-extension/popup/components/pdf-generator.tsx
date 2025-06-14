@@ -137,11 +137,11 @@ const MyDocument = ({ notes, title, isAllNotes }: { notes: Note[], title: string
 
         <View style={styles.branding} fixed>
           <Image
-            style={{ height: "18px", width: "18px", marginBottom: 2 }}
-            src="/projectLogo.png"
+            style={{ height: "18px", width: "18px", marginBottom: 2, display:"flex" ,gap:"5px" }}
+            src="/logo.png"
           />
-          <Link src="https://youtube-study-kit.vercel.app/">
-            Created Using YouTube Study Kit
+          <Link src="https://studytube-beta.vercel.app/">
+            Created Using StudyTube
           </Link>
         </View>
       </Page>

@@ -1,13 +1,3 @@
-export interface Note {
-  id: string
-  videoId: string
-  timestamp: string
-  timestampSeconds: number
-  image: string
-  description: string
-  createdAt: string
-}
-
 export interface BackendResponse {
   [videoId: string]: {
     data: {
@@ -22,6 +12,16 @@ export interface BackendResponse {
     videoDuration:string,
   }
 }
+export interface Note {
+  id: string
+  videoId: string
+  timestamp: string
+  timestampSeconds: number
+  image: string
+  description: string
+  createdAt: string
+}
+
 
 export interface Video {
   id: string

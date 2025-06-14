@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "version": "2.1",
-  "name": "Youtube Study Kit",
+  "name": "StudyTube",
   "permissions": [
     "activeTab",
     "storage",
@@ -13,11 +13,11 @@
   },
   "description": "Quickly Make video notes and convert into pdf",
   "icons": {
-    "16": "projectLogo.png",
-    "48": "projectLogo.png"
+    "16": "logo.png",
+    "48": "logo.png"
   },
   "action": {
-    "default_title": "Youtube Study Kit",
+    "default_title": "StudyTube",
     "default_popup": "popup.html"
   },
   "oauth2": {

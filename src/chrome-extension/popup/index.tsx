@@ -14,9 +14,11 @@ import { VideoNotesView } from "./components/video-notes-view"
 // import { PlaylistView } from "./components/playlist-view"
 import { LoadingSpinner } from "./components/loading-skeleton"
 import { useVideos, useAllNotes } from "./hooks/use-api"
-import { getCurrentVideoId, isYoutube } from "./lib/utils"
+import { getAllData, getCurrentVideoId, isYoutube } from "./lib/utils"
 // import { useUser } from "@civic/auth-web3/react"
-import { signInWithCivic, logoutCivic, getCivicUserInfo } from "./lib/auth";
+import { UserButton } from "./components/civic-auth/user-button"
+import { useCivicUser } from "./hooks/civic-auth-context"
+import { supabase } from "../supabase/config"
 
 function StudyTubeExtension() {
   const [isOnYouTube, setIsOnYouTube] = useState(false)
@@ -25,7 +27,11 @@ function StudyTubeExtension() {
   const [currentFilter, setCurrentFilter] = useState<FilterType>("all")
   const [selectedVideoId, setSelectedVideoId] = useState<string | undefined>()
   const [searchLoading, setSearchLoading] = useState(false)
-  // const { signIn } = useUser();
+  const [error, setError] = useState("");
+  const [notesSyncing, setNotesSyncing] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const user = useCivicUser();
 
   // API hooks for global data
   const { videos } = useVideos()
@@ -69,20 +75,69 @@ function StudyTubeExtension() {
   }
 
 
-  const handleLogin = async () => {
-    try {
-      await signInWithCivic();
-      const user = await getCivicUserInfo();
-      console.log("User Info:", user);
-    } catch (err) {
-      console.error("Login failed:", err);
-    }
-  };
+  async function getStableId(input: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(input);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    return hashHex.slice(0, 16); // Use first 16 characters for brevity
+  }
 
-  const handleLogout = async () => {
-    await logoutCivic();
-    console.log("Logged out.");
-  };
+  async function handleSync() {
+    if (!user) {
+      setError("Please sign in first");
+      return;
+    }
+
+    const id = user.email;
+    const allData = await getAllData();
+
+    try {
+      setNotesSyncing(true);
+      setError("");
+      setSuccess(null);
+
+      // ✅ 1. Hash + attach user ID to each video
+      const videosWithUser = await Promise.all(
+        allData.videos.map(async (video) => ({
+          ...video,
+          id: await getStableId(id + video.title + video.channel + video.duration),
+          user_id: id,
+        }))
+      );
+
+      const { error: videoError } = await supabase
+        .from("videos")
+        .upsert(videosWithUser, { onConflict: "id" });
+
+      if (videoError) throw videoError;
+
+      // ✅ 2. Hash + attach user ID to each note
+      const notesWithUser = await Promise.all(
+        allData.notes.map(async (note) => ({
+          ...note,
+          id: await getStableId(id + note.videoId + note.timestamp + note.description),
+          user_id: id,
+        }))
+      );
+
+      const { error: noteError } = await supabase
+        .from("notes")
+        .upsert(notesWithUser, { onConflict: "id" });
+
+      if (noteError) throw noteError;
+
+      // ✅ Done
+      setSuccess("✅ Sync successful!");
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error: any) {
+      console.error("Sync error:", error);
+      setError("Sync failed: " + error.message);
+    } finally {
+      setNotesSyncing(false);
+    }
+  }
 
 
   if (!isOnYouTube) {
@@ -110,7 +165,7 @@ function StudyTubeExtension() {
               </div>
             </div>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent mb-2 pb-2">
             StudyTube
           </h1>
           <p className="text-sm text-muted-foreground font-medium">Your YouTube Study Companion</p>
@@ -189,7 +244,8 @@ function StudyTubeExtension() {
         <div className="flex items-center gap-1 flex-shrink-0">
           <Button size="sm" variant="outline" className="h-7 px-2 text-xs"
             onClick={() => {
-              window.open("https://frametagger.com/learn?v=390423", "_blank");
+              const url = `https://studytube-beta.vercel.app/dashboard/learn?v=${encodeURIComponent(selectedVideoId ?? "123")}`;
+              chrome.tabs.create({ url });
             }}
           >
             <Expand className="w-3 h-3" />
@@ -314,28 +370,26 @@ function StudyTubeExtension() {
                   <Card className="border-border/50">
                     <CardContent className="p-4">
                       <div className="text-center">
-                        <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
-                          {/* <User className="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> */}
-                          <button onClick={handleLogin} className="sign-in">
-                            Sign in
-                          </button>
-                          <button onClick={handleLogout} className="sign-in">
-                            Sign out
-                          </button>
-                        </div>
-                        <p className="text-sm font-medium text-foreground">Study User</p>
-                        <p className="text-xs text-muted-foreground">student@example.com</p>
-                        <div className="mt-3 space-y-2">
-                          <div className="text-xs text-muted-foreground">
-                            <span className="font-medium">{videos.length}</span> videos studied
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            <span className="font-medium">{notes.length}</span> notes compiled
-                          </div>
-                        </div>
-                        <Button className="mt-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-7">
-                          Sync Notes
-                        </Button>
+                        <UserButton />
+                        {user ?
+                          (<>
+                            <p className="text-sm font-medium text-foreground">{user.name}</p>
+                            <p className="text-xs text-muted-foreground">{user.email}</p>
+                            <div className="mt-3 space-y-2">
+                              <div className="text-xs text-muted-foreground">
+                                <span className="font-medium">{videos.length}</span> videos studied
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                <span className="font-medium">{notes.length}</span> notes compiled
+                              </div>
+                            </div>
+                            <Button onClick={handleSync} className="mt-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-7">
+                              {notesSyncing ? "Syncing" : "Sync Notes"}
+                            </Button>
+                            {error && <div className="text-red-700 text-sm">* {error}</div>}
+                            {success && <div className="text-green-700 text-sm mt-2">{success}</div>}
+                          </>)
+                          : null}
                       </div>
                     </CardContent>
                   </Card>

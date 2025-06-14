@@ -1,5 +1,6 @@
 const CIVIC_CLIENT_ID = "8d2ee20a-b1f7-4bc2-89a9-2648289e05bb";
 const REDIRECT_URI = `https://${chrome.runtime.id}.chromiumapp.org/`;
+console.log("redirect_uri ",REDIRECT_URI);
 const CIVIC_TOKEN_URL = "https://auth.civic.com/oauth/token";
 const CIVIC_USERINFO_URL = "https://auth.civic.com/oauth/userinfo";
 
@@ -37,6 +38,7 @@ export async function signInWithCivic() {
     code_challenge_method: "S256",
     code_challenge: codeChallenge,
     state,
+    prompt: "login",
   }).toString();
 
   return new Promise<void>((resolve, reject) => {
@@ -122,10 +124,10 @@ export async function logoutCivic() {
   chrome.identity.launchWebAuthFlow(
     {
       url: logoutUrl,
-      interactive: false,
+      interactive: true, // 👈 Open visible logout page
     },
-    () => {
-      console.log("Civic session cleared.");
+    (responseUrl) => {
+      console.log(responseUrl,"Civic session cleared.");
     }
   );
 }

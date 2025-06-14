@@ -10,7 +10,7 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         { src: "src/chrome-extension/manifest.json", dest: "." },
-        { src: "src/chrome-extension/projectLogo.png", dest: "." },
+        { src: "src/chrome-extension/logo.png", dest: "." },
         { src: "src/chrome-extension/contentcss.css", dest: "." },
       ],
     }),

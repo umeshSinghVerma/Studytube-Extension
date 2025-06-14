@@ -61,7 +61,7 @@ export function useAllNotes() {
 
 export function useVideoNotes(videoId: string) {
   const [notes, setNotes] = useState<Note[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {

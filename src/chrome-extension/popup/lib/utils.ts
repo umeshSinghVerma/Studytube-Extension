@@ -3,7 +3,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { BackendResponse, Note, Video } from "./mock-data";
-
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
@@ -38,7 +37,7 @@ export function transformBackendData(
   console.log("backend data ", backendData);
 
   Object.entries(backendData).forEach(([videoId, videoData]) => {
-    const { heading, updatedAt, data,channelName,videoDuration } = videoData
+    const { heading, updatedAt, data, channelName, videoDuration } = videoData
 
     videos.push({
       id: videoId,
