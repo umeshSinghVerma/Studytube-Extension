@@ -1,4 +1,4 @@
-## 🔐 Civic Auth in Chrome Extensions (Unofficial Integration)
+## 🔐 Civic Auth in Chrome Extensions
 
 > ⚠️ **Note**: [Civic](https://www.civic.com/) does **not officially support** authentication inside Chrome Extensions.
 > ✅ I have built a full PKCE-based workaround using `chrome.identity` that **enables Civic login in Chrome Extensions**.
